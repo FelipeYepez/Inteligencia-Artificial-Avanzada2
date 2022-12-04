@@ -4,6 +4,8 @@ author: "Felipe Gabriel Yépez Villacreses - A01658002"
 date: "2022-10-26"
 output: pdf_document
 ---
+Módulo 5: Estadística Avanzada para ciencia de datos y nombre de la concentración
+Grupo 2
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
