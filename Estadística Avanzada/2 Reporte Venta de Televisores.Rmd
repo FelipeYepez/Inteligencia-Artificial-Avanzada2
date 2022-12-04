@@ -1,0 +1,138 @@
+---
+title: "Reporte Venta de Televisores"
+author: "Felipe Yépez"
+date: "2022-12-01"
+output: pdf_document
+---
+Módulo 5: Estadística Avanzada para ciencia de datos y nombre de la concentración
+Grupo 2
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Resumen
+Se analizó la venta de televisores de 4 años, cada uno con 4 trimestres de ventas totales. Se utilizó esta serie de tiempo para realizar predicciones de las ventas a futuro mediante el análisis de Serie de Tiempo No estacionaria.
+
+Se analiza las ventas de televisores a lo largo del tiempo.
+
+# Introducción
+Para un negocio es importante poder realizar predicciones informadas con la finalidad de que puedan tomar decisiones acertadas que favorezcan el bien y la perduración de su negocio a lo largo del tiempo. 
+
+Es importante poder realizar modelos lo más cercanos a lo que realmente pueda pasar para poder tomar decisiones informadas.
+
+
+# Explorando la base
+Gráfica de dispersión de los datos:
+
+```{r}
+t = 1:16
+ventas = c(4.8, 4.1, 6.0, 6.5, 5.8, 5.2, 6.8, 7.4, 6.0, 5.6, 7.5, 7.8, 6.3, 5.9, 8.0, 8.4)
+plot(t, ventas, type="o", col="red", main="Ventas (Miles)")
+```
+Se puede observar en la gráfica anterior que existe tendencia alcista con ciclos de 4 trimetres. Cada trimestre las ventas van en aumento respecto al anterior. Se observa un canal alcista en la gráfica con límites inferiores en el 2do trimestre de cada año y con límites superiores en cada 4to trimestre.
+
+
+## Descomposición de la serie de tiempo
+```{r}
+x=ts(ventas, frequency = 4, start(c(2016,1)))
+T = decompose(x, type = "m")
+plot(T, col="blue")
+```
+
+Se trata de una serie no estacionaria ya que existe tendencia en la gráfica que va en aumento.
+
+En la gráfica de Observed se pueden visualizar los valores originales de la serie de tiempo.
+
+Seasonal muestra la tendencia estacional mientras que random muestra la tendencia aleatoria, es decir los errores entre lo predicho en la tendencia estacional y lo observado.
+
+# Regresión lineal de la serie de tiempo desestacionalizada
+```{r}
+ventas_desestacionalizadas = (T$x)/(T$seasonal)
+reg = lm(ventas_desestacionalizadas~t)
+reg
+plot(t, ventas_desestacionalizadas, type="l")
+abline(reg, col="red")
+text(6,7, "ventas = 5.1080 + 0.1474t")
+```
+## Significancia de la regresión lineal
+```{r}
+summary(reg)
+```
+Se puede observar según los p values obtenidos que el modelo es significativo ya que se puede rechazar la hipótesis nula de que B1 es diferente de 0 y por lo tanto existe dependencia en el modelo. Los p values no superan el valor de significancia $alpha = 0.05$
+
+Se obtiene un valor R cuadrada de 0.9208 por lo que la variabilidad explicada por el modelo es alta, superando el 90%. Y una R cuadrada ajustada de 0.9151
+
+## Normalidad de residuos
+Mediante Shapiro Wilk se evaluará la normalidad con la finalidad de saber si el conjunto de datos proviene de una distribución normal.
+```{r}
+shapiro.test(reg$residuals)
+```
+La hipótesis nula dice que los datos provienen de una población normal. Utilizando el nivel de significancia de $alpha = 0.05$, no se puede rechazar $H_0$ por lo que se puede asumir que los residuos provienen de una distribución normal. 
+
+
+## Homocedasticidad e Independencia
+```{r}
+par(mfrow=c(2,2))
+plot(reg)
+```
+Se puede observar en las anteriores gráficas de residuos que existe normalidad en el conjunto de datos.El QQPlot muestra normalidad, algo que ya se había logrado determinar con la prueba Shapiro.
+
+Los residuos no muestran ninguna estructura evidente por lo que se puede asumir que el modelo de regresión es adecuado y cuenta con homocedasticidad e independencia.
+
+```{r}
+hist(reg$residuals)
+lines(density(reg$residuals), col="red")
+```
+Existe poco de sesgo a la izquierda en la distribución de los residuos, sin embargo, están bien distribuidos.
+
+Se prueba la media de los residuos.
+```{r}
+t.test(reg$residuals)
+```
+Sale un valor muy cercano a 0 para la media de residuos.
+
+## Promedio de los errores porcentuales de la predicción de la serie de tiempo
+Mediante el CME se puede conocer la diferencia cuadrática media entre los valores estimados y los valores reales de la distribución.
+```{r}
+CME = mean(ventas_desestacionalizadas ^ 2, na.rm = TRUE)
+CME
+```
+Se obtiene un CME de 40.96 para el promedio móvil, un valor un tanto elevado que indica que existe diferencia entre la regresión y el cuadrado de los puntos.
+
+## Conclusión del modelo
+En general el modelo es bueno por los anteriores hallazgos, se ajusta y explica la variabilidad de la venta de televisores y existe normalidad en los datos. El modelo tiene dependencia con sus variables. Existe normalidad, homocedasticidad e independencia.
+
+Por lo anterior, se puede utilizar el modelo para pronosticar las ventas que se tendrá de televisores los siguientes 4 trimestres.  El valor de R cuadrada indica que el modelo tiene buen ajuste al conjunto de datos.
+
+
+
+# Pronóstico para el siguiente año
+Se obtienen las predicciones para los 4 trimestres del siguiente año en (miles).
+```{r}
+f = function(x) {5.1080 + 0.1474*x}
+a1 = T$seasonal[1]
+a2 = T$seasonal[2]
+a3 = T$seasonal[3]
+a4 = T$seasonal[4]
+f(17)*a1
+f(18)*a2
+f(19)*a3
+f(20)*a4
+```
+
+Se pueden utilizar estas predicciones para tomar buenas decisiones en el negocio de venta de televisores.
+
+# Conclusión
+Se puede concluir que realizar modelos de predicción mediante el conocimiento de series de tiempo puede llegar a ser beneficioso para negocios como en este caso de venta de televisores. Se puede llegar a realizar predicciónes de lo que sucederá con mayor confianza al evalauar la pertinencia del modelo y su ajuste.
+
+El modelo obtenido para pronosticar las ventas de los siguientes 4 trimestres, es bueno por los anteriores hallazgos.
+
+Mediante series de tiempo se puede sintetizar la información de las ventas para poderlas ver de forma más sencilla y entender el comportamiento que las mismas tienen por trimestre.
+
+Se puede conocer cuáles serán los trimestres con menos ventas y más ventas. Por ejemplo, se puede tomar decisiones de cuántas personas tener en un local de venta de televisores dependiendo de las ventas y la concurrencia que los locales tengan.
+
+
+# Anexos
+Documento de análisis.
+https://github.com/FelipeYepez/Inteligencia-Artificial-Avanzada2/tree/main/Estad%C3%ADstica%20Avanzada
